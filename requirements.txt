@@ -8,4 +8,5 @@ community
 dash_table
 dash_cytoscape
 dash_bootstrap_components
+python-louvain
 gunicorn
