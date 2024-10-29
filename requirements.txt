@@ -6,7 +6,6 @@ plotly
 networkx
 community
 dash_table
-sklearn
 dash_cytoscape
 dash_bootstrap_components
 gunicorn
