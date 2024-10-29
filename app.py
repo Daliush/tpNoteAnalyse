@@ -65,6 +65,7 @@ student_performance_df['community'] = [partition.get(f"Student_{idx}") for idx i
 
 # Dash app setup
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+server = app.server
 
 # Create initial visualizations
 scatter_plot = px.scatter(
