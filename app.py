@@ -107,13 +107,13 @@ for i in range(len(heatmap_fig.layout.annotations)):
 # Layout for Dash app
 app.layout = dbc.Container([
     dbc.Row([dbc.Col(html.H1("Student Performance Dashboard", className="text-center"))]),
-
+    
     # Section pour la distribution des scores d'examen
     dbc.Row([
         dbc.Col(dcc.Graph(id="distribution-plot", figure=fig_distribution), width=6),
         dbc.Col(dcc.Graph(id="correlation-heatmap", figure=heatmap_fig), width=6),
     ]),
-
+    
     # Section pour le clustering K-means
     dbc.Row([
         dbc.Col(dcc.Graph(id="scatter-hours-vs-scores", figure=scatter_plot), width=6),
@@ -124,7 +124,7 @@ app.layout = dbc.Container([
                        tooltip={"placement": "bottom", "always_visible": True}),
         ], width=6),
     ]),
-
+    
     dbc.Row([
         dbc.Col(html.H3("Student Data Table"), width=12),
         dbc.Col(dcc.Dropdown(
