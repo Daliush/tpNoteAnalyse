@@ -45,8 +45,8 @@ fig_distribution = px.histogram(
     title="Distribution des Scores d'Examen"
 )
 
-# Heatmap de corrélation
-correlation_matrix = student_performance_df[['Hours_Studied', 'Exam_Score']].corr()
+# Correlation heatmap for numeric variables
+correlation_matrix = student_performance_df[['Hours_Studied', 'Exam_Score', 'Attendance', 'Previous_Scores']].corr()
 heatmap_fig = ff.create_annotated_heatmap(
     z=correlation_matrix.values,
     x=correlation_matrix.columns.tolist(),
@@ -55,39 +55,77 @@ heatmap_fig = ff.create_annotated_heatmap(
     showscale=True,
     annotation_text=correlation_matrix.round(2).values
 )
-heatmap_fig.update_layout(title="Correlation Heatmap of Numeric Factors")
+heatmap_fig.update_layout(
+    title="Correlation Heatmap of Numeric Factors",
+    font=dict(size=12)
+)
 
 # Initialiser l'application Dash
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP], suppress_callback_exceptions=True)
 server = app.server
 
-# Layout de l'application
-app.layout = dbc.Container([
-    dbc.Row([dbc.Col(html.H1("Student Performance Dashboard", className="text-center"))]),
+# Page d'accueil embellie
+homepage_content = html.Div([
+    dbc.Container([
+        dbc.Row([
+            dbc.Col(html.H1("Bienvenue sur le Tableau de Bord des Performances Étudiantes",
+                            className="text-center my-4",
+                            style={"color": "black"}),  # Titre principal en noir
+    )]),
+        dbc.Row([
+            dbc.Col(html.Img(src="https://cdn.pixabay.com/photo/2019/08/06/22/48/artificial-intelligence-4389372_1280.jpg",
+                             alt="Image représentant les performances étudiantes",
+                             className="img-fluid mb-4 rounded shadow"), width=12)
+        ]),
+        dbc.Row([
+            dbc.Col(html.H3("Explorez et Analysez les Données Étudiantes",
+                            className="text-center mb-3 text-secondary"), width=12),
+            dbc.Col(html.P("""
+                Ce tableau de bord interactif permet d'explorer les performances des élèves lors d'examens
+                en fonction de divers facteurs comme l'implication des parents, le type d'école, et les heures d'étude.
+                Identifiez les corrélations clés et comprenez les facteurs influençant les scores des étudiants.
+            """, className="text-center"), width=12)
+        ]),
+        html.Hr(),
+        dbc.Row([
+            dbc.Col(html.H3("Fonctionnalités", className="text-center mt-4 mb-4 text-success"), width=12)
+        ]),
+        dbc.Row([
+            dbc.Col(dbc.Card([
+                dbc.CardBody([
+                    html.H4("Visualisez les Scores", className="card-title text-primary"),
+                    html.P("""
+                        Analysez la distribution des scores des examens avec des graphiques interactifs.
+                    """, className="card-text"),
+                ])
+            ], className="mb-4 shadow"), width=4),
+            dbc.Col(dbc.Card([
+                dbc.CardBody([
+                    html.H4("Relations entre Facteurs", className="card-title text-warning"),
+                    html.P("""
+                        Explorez les corrélations entre différents facteurs grâce à une heatmap.
+                    """, className="card-text"),
+                ])
+            ], className="mb-4 shadow"), width=4),
+            dbc.Col(dbc.Card([
+                dbc.CardBody([
+                    html.H4("Clustering et Analyse Avancée", className="card-title text-success"),
+                    html.P("""
+                        Découvrez les regroupements d'étudiants grâce à des analyses de clustering (PCA et t-SNE).
+                    """, className="card-text"),
+                ])
+            ], className="mb-4 shadow"), width=4),
+        ]),
+    ])
+])
 
-    # Distribution et heatmap
+# Tableau de bord
+dashboard_content = dbc.Container([
+    dbc.Row([dbc.Col(html.H1("Student Performance Dashboard", className="text-center"))]),
     dbc.Row([
         dbc.Col(dcc.Graph(id="distribution-plot", figure=fig_distribution), width=6),
         dbc.Col(dcc.Graph(id="correlation-heatmap", figure=heatmap_fig), width=6),
     ]),
-
-    # Filtres
-    dbc.Row([
-        dbc.Col(dcc.Dropdown(
-            id="motivation-filter",
-            options=[{'label': m, 'value': m} for m in student_performance_df["Motivation_Level"].unique()],
-            multi=True,
-            placeholder="Filter by Motivation"
-        ), width=6),
-        dbc.Col(dcc.Dropdown(
-            id="school-filter",
-            options=[{'label': s, 'value': s} for s in student_performance_df["School_Type"].unique()],
-            multi=True,
-            placeholder="Filter by School Type"
-        ), width=6),
-    ]),
-
-    # PCA / t-SNE et clustering
     dbc.Row([
         dbc.Col(dcc.RadioItems(
             id="dimensionality-method",
@@ -102,8 +140,6 @@ app.layout = dbc.Container([
         )),
         dbc.Col(dcc.Graph(id="dimensionality-plot"), width=12),
     ]),
-
-    # Tableau de données
     dbc.Row([
         dbc.Col(html.H3("Student Data Table"), width=12),
     ]),
@@ -118,23 +154,31 @@ app.layout = dbc.Container([
     ), width=12)]),
 ])
 
-# Callbacks
-@app.callback(
-    Output("distribution-plot", "figure"),
-    [Input("motivation-filter", "value"),
-     Input("school-filter", "value")]
-)
-def update_histogram(selected_motivation, selected_school):
-    filtered_df = student_performance_df.copy()
-    if selected_motivation:
-        filtered_df = filtered_df[filtered_df["Motivation_Level"].isin(selected_motivation)]
-    if selected_school:
-        filtered_df = filtered_df[filtered_df["School_Type"].isin(selected_school)]
+# Navigation
+app.layout = dbc.Container([
+    dcc.Location(id="url"),
+    dbc.NavbarSimple(
+        children=[
+            dbc.NavItem(dbc.NavLink("Accueil", href="/")),
+            dbc.NavItem(dbc.NavLink("Tableau de Bord", href="/dashboard")),
+        ],
+        brand="Performances Étudiantes",
+        brand_style={"color": "black"},  # Bandeau de menu : Titre en noir
+        color="white",  # Fond blanc pour le bandeau
+        dark=False,  # Définir "dark" sur False pour fond clair
+        className="mb-4 border-bottom"
+    ),
+    html.Div(id="page-content")
+], fluid=True)
 
-    return px.histogram(
-        filtered_df, x="Exam_Score", nbins=20,
-        title="Distribution des Scores d'Examen"
-    )
+@app.callback(
+    Output("page-content", "children"),
+    Input("url", "pathname")
+)
+def display_page(pathname):
+    if pathname == "/dashboard":
+        return dashboard_content
+    return homepage_content
 
 @app.callback(
     Output("dimensionality-plot", "figure"),
@@ -156,20 +200,5 @@ def update_dimensionality_plot(method, n_clusters):
             title=f"Clustering avec t-SNE ({n_clusters} clusters)"
         )
 
-@app.callback(
-    Output("student-table", "data"),
-    [Input("motivation-filter", "value"),
-     Input("school-filter", "value")]
-)
-def update_table(selected_motivation, selected_school):
-    filtered_df = student_performance_df.copy()
-    if selected_motivation:
-        filtered_df = filtered_df[filtered_df["Motivation_Level"].isin(selected_motivation)]
-    if selected_school:
-        filtered_df = filtered_df[filtered_df["School_Type"].isin(selected_school)]
-
-    return filtered_df.to_dict("records")
-
-# Démarrer l'application
 if __name__ == "__main__":
     app.run_server(debug=True)
